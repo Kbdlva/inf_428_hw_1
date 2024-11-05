@@ -1,18 +1,29 @@
 import unittest
 
-import unittest
 from solution import generate_random_data, calculate_department_mean, calculate_aggregated_threat_score 
 
 class TestAggregatedThreatScore(unittest.TestCase):
     
     def test_calculate_department_mean(self):
-        data = [10, 20, 30, 40, 50]
-        self.assertAlmostEqual(calculate_department_mean(data), 30, places=2)
+        data = [10, 20, 30, 40, 50]  #give values to department thread score 
+        self.assertAlmostEqual(calculate_department_mean(data), 30, places=2) # check value of the function with actual value
     
     def test_calculate_aggregated_threat_score(self):
         department_scores = [50, 60, 70]
         importance_weights = [1, 1, 1]
         self.assertAlmostEqual(calculate_aggregated_threat_score(department_scores, importance_weights), 60, places=2)
+
+        # Aggregated Score= (50*1 + 60 *1 + 70 *1)/1+1+1 = 60 --> check that function esstimates this way
+
+
+        # different variations of combinations 
+
+# - all departments has the same importance
+# - all departments has the different importance
+# - different number of users.
+# - each department has no outliers (no really high threat scores) and vice versa
+# - each department mean threat score are NOT far from each other and vice versa
+
 
     def test_equal_mean_scores_equal_importance(self):
         scores = [generate_random_data(50, 5, 50) for _ in range(5)]
