@@ -46,3 +46,8 @@ class TestTimeTransformation(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
+
+
+    #use variance and other values to check when it is 30, 30, 30, 30, 80 we need to get not just mean value, but see where it is critical 
+    # we should be able to run each test separately. 
+    # 20 more test cases 

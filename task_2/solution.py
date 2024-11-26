@@ -1,17 +1,38 @@
 import numpy as np
 
 def generate_random_data(mean, variance, num_samples):
-    return np.random.randint(max(mean - variance, 0), min(mean + variance + 1, 90), num_samples)
+    lower_bound = max(mean - variance, 0)
+    upper_bound = min(mean + variance + 1, 90)
+
+    if lower_bound >= upper_bound:
+        raise ValueError(f"Invalid range: lower_bound >= upper_bound. Lower bound: {lower_bound}, Upper bound: {upper_bound}")
+    
+    return np.random.randint(lower_bound, upper_bound, num_samples)
 
 
 def calculate_department_mean(threat_scores):
-    return np.mean(threat_scores) #function to calulate mean of 5 deparment threat_scores
+    return np.mean(threat_scores)
 
-def calculate_aggregated_threat_score(department_scores, importance_weights):
-    # Calculate weighted mean of department scores
-    weighted_sum = sum(score * weight for score, weight in zip(department_scores, importance_weights)) #zip(department_scores, importance_weights): This combines department_scores and importance_weights into pairs, where each score is matched with its corresponding weight.
-    total_weight = sum(importance_weights)
-    return min(max(weighted_sum / total_weight, 0), 90) #weighted average of the department scores between 0-90
 
-# department_scores is a list of mean threat scores for different departments.
-# importance_weights is indicating how critical the threat levels in each department are relative to others.
+def calculate_department_variance(threat_scores):
+    return np.var(threat_scores)
+
+
+def calculate_aggregated_threat_score(department_scores):
+    """
+    Calculate aggregated threat score. Departments with higher variance are weighted more
+    to account for potential outliers.
+    """
+    means = [np.mean(scores) for scores in department_scores]
+    variances = [np.var(scores) for scores in department_scores]
+    
+    # Normalize variances to use as weights (avoid division by zero)
+    max_variance = max(variances)
+    weights = [(var / max_variance) if max_variance > 0 else 1 for var in variances]
+    
+    # Weighted average
+    weighted_sum = sum(mean * weight for mean, weight in zip(means, weights))
+    total_weight = sum(weights)
+    
+    aggregated_score = weighted_sum / total_weight if total_weight > 0 else np.mean(means)
+    return min(max(aggregated_score, 0), 90)

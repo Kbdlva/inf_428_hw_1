@@ -1,89 +1,90 @@
 import unittest
-
-from solution import generate_random_data, calculate_department_mean, calculate_aggregated_threat_score 
+import numpy as np
+from solution import (
+    generate_random_data,
+    calculate_aggregated_threat_score
+)
 
 class TestAggregatedThreatScore(unittest.TestCase):
-    
-    def test_calculate_department_mean(self):
-        data = [10, 20, 30, 40, 50]  #give values to department thread score 
-        self.assertAlmostEqual(calculate_department_mean(data), 30, places=2) # check value of the function with actual value
-    
-    def test_calculate_aggregated_threat_score(self):
-        department_scores = [50, 60, 70]
-        importance_weights = [1, 1, 1]
-        self.assertAlmostEqual(calculate_aggregated_threat_score(department_scores, importance_weights), 60, places=2)
 
-        # Aggregated Score= (50*1 + 60 *1 + 70 *1)/1+1+1 = 60 --> check that function esstimates this way
+    @classmethod
+    def setUpClass(cls):
+        np.random.seed(42)
 
+    def test_equal_department_scores(self):
+        scores = [generate_random_data(30, 0, 5) for _ in range(5)]
+        result = calculate_aggregated_threat_score(scores)
+        self.assertAlmostEqual(result, 30, delta=2)
 
-        # different variations of combinations 
-
-# - all departments has the same importance
-# - all departments has the different importance
-# - different number of users.
-# - each department has no outliers (no really high threat scores) and vice versa
-# - each department mean threat score are NOT far from each other and vice versa
-
-
-    def test_equal_mean_scores_equal_importance(self):
-        scores = [generate_random_data(50, 5, 50) for _ in range(5)]
-        department_means = [calculate_department_mean(score) for score in scores]
-        importance = [3, 3, 3, 3, 3]
-        result = calculate_aggregated_threat_score(department_means, importance)
-        self.assertTrue(0 <= result <= 90)
-
-    def test_high_variance_in_threat_scores(self):
+    def test_one_high_score_others_low(self):
         scores = [
-            generate_random_data(10, 5, 50),  # Low threat department
-            generate_random_data(80, 5, 50),  # High threat department
-            generate_random_data(40, 10, 50),
-            generate_random_data(30, 20, 50),
-            generate_random_data(70, 5, 50)
+            generate_random_data(30, 0, 4) + generate_random_data(80, 0, 1)  # One high outlier
+            for _ in range(5)
         ]
-        department_means = [calculate_department_mean(score) for score in scores]
-        importance = [3, 3, 3, 3, 3]
-        result = calculate_aggregated_threat_score(department_means, importance)
-        self.assertTrue(0 <= result <= 90)
+        result = calculate_aggregated_threat_score(scores)
+        self.assertTrue(result > 40)
 
-    def test_different_importance_weights(self):
+    def test_outlier_in_finance(self):
         scores = [
-            generate_random_data(50, 5, 50),
-            generate_random_data(60, 10, 50),
-            generate_random_data(70, 5, 50),
-            generate_random_data(30, 10, 50),
-            generate_random_data(20, 5, 50)
+            generate_random_data(30, 10, 5),  # HR
+            generate_random_data(20, 10, 5),  # IT
+            generate_random_data(30, 10, 5),  # Operations
+            np.concatenate((generate_random_data(30, 10, 4), generate_random_data(80, 5, 1))),
+            generate_random_data(30, 10, 5),  # Legal
         ]
-        department_means = [calculate_department_mean(score) for score in scores]
-        importance = [1, 2, 5, 3, 4]
-        result = calculate_aggregated_threat_score(department_means, importance)
-        self.assertTrue(0 <= result <= 90)
 
-    def test_large_differences_in_user_count(self):
-        scores = [
-            generate_random_data(50, 5, 200),
-            generate_random_data(30, 10, 10),
-            generate_random_data(40, 5, 20),
-            generate_random_data(70, 15, 100),
-            generate_random_data(60, 10, 150)
-        ]
-        department_means = [calculate_department_mean(score) for score in scores]
-        importance = [3, 2, 1, 4, 5]
-        result = calculate_aggregated_threat_score(department_means, importance)
-        self.assertTrue(0 <= result <= 90)
+        result = calculate_aggregated_threat_score(scores)
+        print(result)
+        self.assertTrue(35 <= result <= 50)
 
-    def test_extreme_outliers(self):
+
+    def test_different_user_counts_per_department(self):
         scores = [
-            generate_random_data(10, 2, 50),  # Very low threat
-            generate_random_data(85, 2, 50),  # Very high threat
-            generate_random_data(45, 5, 50),
-            generate_random_data(60, 3, 50),
-            generate_random_data(30, 1, 50)
+            generate_random_data(30, 10, 5),  # HR
+            generate_random_data(40, 15, 10),  # IT
+            generate_random_data(20, 5, 3),  # Operations
+            generate_random_data(50, 15, 8),  # Finance
+            generate_random_data(35, 10, 7),  # Legal
         ]
-        department_means = [calculate_department_mean(score) for score in scores]
-        importance = [1, 5, 3, 2, 4]
-        result = calculate_aggregated_threat_score(department_means, importance)
-        self.assertTrue(0 <= result <= 90)
+        result = calculate_aggregated_threat_score(scores)
+        self.assertTrue(30 <= result <= 70)
+
+    def test_uniform_high_scores(self):
+        scores = [generate_random_data(80, 2, 5) for _ in range(5)]
+        result = calculate_aggregated_threat_score(scores)
+        self.assertAlmostEqual(result, 80, delta=2)
+
+    def test_uniform_low_scores(self):
+        scores = [generate_random_data(5, 2, 5) for _ in range(5)]
+        result = calculate_aggregated_threat_score(scores)
+        self.assertAlmostEqual(result, 5, delta=2)
+
+    def test_high_variance_with_extreme_outliers(self):
+        scores = [
+            np.concatenate((generate_random_data(30, 2, 4), generate_random_data(90, 5, 10)))
+            for _ in range(5)
+        ]
+        result = calculate_aggregated_threat_score(scores)
+        print(f"Aggregated Score: {result}")
+        self.assertTrue(result > 50)
+
+
+    def test_large_number_users_different_variance(self):
+        scores = [generate_random_data(40, 10, 150) for _ in range(5)]
+        result = calculate_aggregated_threat_score(scores)
+        self.assertTrue(30 <= result <= 90)
+
+    def test_outlier_impact(self):
+        """
+        Case: One department has an outlier value, and the result should reflect its higher weight.
+        Example: [30, 30, 30, 30, 80]
+        """
+        scores = [
+            generate_random_data(30, 0, 4) + generate_random_data(80, 0, 1)  # One department with an outlier
+            for _ in range(5)
+        ]
+        result = calculate_aggregated_threat_score(scores)
+        self.assertTrue(result > 50)
 
 if __name__ == "__main__":
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
-
