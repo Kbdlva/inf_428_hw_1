@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Threat Score API</title>
+</head>
+<body>
+    <h1>{{ message }}</h1>
+    <p>Welcome to the Threat Score API!</p>
+
+    <img src="{{ url_for('static', filename='image.jpg') }}" alt=" Image" width="300" height="200">
+    
+    <h2>Generated Data:</h2>
+    <table border="1">
+        <tr>
+            <th>Department</th>
+            <th>Scores</th>
+        </tr>
+        {% for department, scores in data.items() %}
+        <tr>
+            <td>{{ department }}</td>
+            <td>{{ scores }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

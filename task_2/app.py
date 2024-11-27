@@ -1,7 +1,34 @@
+from flask import Flask, jsonify, request, render_template
 import numpy as np
 import csv
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
+
+app = Flask(__name__) 
+
+@app.route('/')
+def home():
+    generated_data = {
+        f"department_{i}": generate_random_data(30, 10, 5).tolist()
+        for i in range(5)
+    }
+    save_to_csv("generated_data.csv", generated_data)  
+    return render_template('index.html', message="Welcome to the Threat Score API!", data=generated_data)
+
+@app.route('/generate', methods=['GET'])
+def generate_data():
+    generated_data = {
+        f"department_{i}": generate_random_data(30, 10, 5).tolist()
+        for i in range(5)
+    }
+    save_to_csv("generated_data.csv", generated_data)
+    return render_template('results.html', data=generated_data)
+
+@app.route('/threat_scores', methods=['GET'])
+def get_threat_scores():
+    data, department_names = load_from_csv("generated_data.csv")
+    es_result = index_data_to_elasticsearch(data, department_names)
+    return jsonify(es_result)
 
 def save_to_csv(filename, data):
     with open(filename, mode='w', newline='') as file:
@@ -19,9 +46,9 @@ def load_from_csv(filename):
             scores = list(map(int, row['Scores'].split(',')))
             if department not in data:
                 data[department] = []
-            data[department].extend(scores)  
-        return list(data.values()), list(data.keys()) 
-    
+            data[department].extend(scores)
+        return list(data.values()), list(data.keys())
+
 def generate_random_data(mean, variance, num_samples):
     lower_bound = max(mean - variance, 0)
     upper_bound = min(mean + variance + 1, 90)
@@ -57,20 +84,7 @@ def index_data_to_elasticsearch(data, departments, index_name="department_scores
         actions.append(action)
 
     bulk(es, actions)
-    print(f"Data indexed to Elasticsearch successfully.")
+    return {"message": "Data indexed to Elasticsearch successfully."}
 
-if __name__ == "__main__":
-    generated_data = {
-        f"department_{i}": generate_random_data(30, 10, 5).tolist()
-        for i in range(5)
-    }
-
-    csv_filename = "generated_data.csv"
-    save_to_csv(csv_filename, generated_data)
-    print(f"Saved to CSV {csv_filename}.")
-
-    loaded_data, department_names = load_from_csv(csv_filename)
-    print("Loaded data:")
-    print(loaded_data)
-
-    index_data_to_elasticsearch(loaded_data, department_names)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)

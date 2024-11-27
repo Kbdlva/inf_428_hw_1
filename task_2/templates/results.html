@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Generated Data</title>
+</head>
+<body>
+    <h1>Generated Data</h1>
+    <table border="1">
+        <tr>
+            <th>Department</th>
+            <th>Scores</th>
+        </tr>
+        {% for department, scores in data.items() %}
+        <tr>
+            <td>{{ department }}</td>
+            <td>{{ scores }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
